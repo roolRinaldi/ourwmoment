@@ -1,0 +1,148 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CoupleLogo } from "./CoupleLogo";
+import { DownloadIcon, SendIcon, ShareIcon } from "./MomentIcons";
+import { getTemporaryPhoto } from "@/lib/photo-store";
+import {
+  downloadTemplate,
+  renderWeddingTemplate,
+  TEMPLATE_FILENAME,
+  type WeddingTemplateData,
+} from "@/lib/render-wedding-template";
+
+const GUEST_STORAGE_KEY = "weddingMomentGuest";
+
+type GuestData = { name?: string; wishes?: string };
+
+function ResultAction({
+  label,
+  icon,
+  onClick,
+  disabled = false,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button className="result-action" type="button" onClick={onClick} disabled={disabled}>
+      <span className="result-action-circle">{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
+
+export function ResultExperience() {
+  const router = useRouter();
+  const generationRef = useRef<Promise<Blob> | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState("Preparing your moment...");
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl: string | null = null;
+
+    async function prepareResult() {
+      let guest: GuestData | null = null;
+      try {
+        const stored = sessionStorage.getItem(GUEST_STORAGE_KEY);
+        guest = stored ? (JSON.parse(stored) as GuestData) : null;
+      } catch {
+        sessionStorage.removeItem(GUEST_STORAGE_KEY);
+      }
+
+      if (!guest?.name?.trim() || !guest.wishes?.trim()) {
+        router.replace("/form");
+        return;
+      }
+
+      const photo = await getTemporaryPhoto().catch(() => null);
+      if (!photo) {
+        router.replace("/camera");
+        return;
+      }
+
+      const templateData: WeddingTemplateData = {
+        name: guest.name.trim(),
+        wishes: guest.wishes.trim(),
+        photo,
+      };
+      generationRef.current = renderWeddingTemplate(templateData);
+      const result = await generationRef.current;
+      if (!active) return;
+
+      objectUrl = URL.createObjectURL(result);
+      setPreviewUrl(objectUrl);
+      setReady(true);
+      setStatus("");
+    }
+
+    void prepareResult().catch(() => {
+      if (!active) return;
+      setStatus("Your moment could not be prepared. Please select the photo again.");
+    });
+
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [router]);
+
+  async function getGeneratedTemplate() {
+    if (!generationRef.current) throw new Error("Template is not ready");
+    return generationRef.current;
+  }
+
+  async function handleDownload() {
+    if (busy || !ready) return;
+    setBusy(true);
+    try {
+      downloadTemplate(await getGeneratedTemplate());
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleShare() {
+    if (busy || !ready) return;
+    setBusy(true);
+    try {
+      const blob = await getGeneratedTemplate();
+      const file = new File([blob], TEMPLATE_FILENAME, { type: "image/png" });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Fachrul & Tasya Wedding Moment" });
+      } else {
+        downloadTemplate(blob);
+      }
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        setStatus("Sharing is unavailable. Please use Download instead.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="result-shell app-shell">
+      <div className="result-logo"><CoupleLogo /></div>
+
+      <div className="result-preview" aria-label="Final wedding moment preview">
+        {previewUrl ? <img src={previewUrl} alt="Final wedding moment artwork" /> : <p>{status}</p>}
+      </div>
+
+      <div className="result-actions">
+        <ResultAction label="Download" icon={<DownloadIcon className="result-action-icon" />} onClick={handleDownload} disabled={!ready || busy} />
+        <ResultAction label="Share" icon={<ShareIcon className="result-action-icon" />} onClick={handleShare} disabled={!ready || busy} />
+        <ResultAction label="Kirim" icon={<SendIcon className="result-action-icon" />} disabled={!ready || busy} />
+      </div>
+
+      <p className="sr-only" aria-live="polite">{status}</p>
+    </main>
+  );
+}

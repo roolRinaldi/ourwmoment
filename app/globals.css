@@ -66,19 +66,78 @@ button { color: inherit; }
   text-align: center;
 }
 
-.couple-names {
-  margin: 18px 0 0;
-  font-family: var(--font-patung);
-  font-size: 40px;
-  font-weight: 400;
-  line-height: .86;
-  text-align: center;
+.wedding-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.couple-names span { display: block; }
-.couple-names .ampersand { margin: 5px 0 2px; font-size: 25px; line-height: .55; }
+.couple-names {
+  position: relative;
+  width: 202px;
+  height: 91px;
+  margin: 23px 0 0;
+  font-family: var(--font-patung);
+  font-size: 45px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.couple-names span { position: absolute; white-space: nowrap; }
+.couple-names .first-name { top: 4px; left: 0; }
+.couple-names .ampersand { top: 31px; left: 80px; font-size: 39px; }
+.couple-names .last-name { top: 47px; left: 108px; }
 
 .couple-logo { width: 32px; height: auto; }
+
+.form-field label {
+  display: block;
+  margin-bottom: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.form-field input,
+.form-field textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, .88);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, .03);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  outline: none;
+}
+
+.form-field input {
+  height: 43px;
+  padding: 0 10px;
+}
+
+.form-field textarea {
+  height: 100px;
+  padding: 14px 10px;
+  resize: none;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder { color: rgba(255, 255, 255, .52); }
+
+.form-field input:focus,
+.form-field textarea:focus { border-color: #fff; }
+
+.form-field [aria-invalid="true"] { border-color: rgba(255, 255, 255, .65); }
+
+.field-error {
+  margin: 4px 4px 0;
+  color: rgba(255, 255, 255, .78);
+  font-size: 10px;
+  line-height: 1.2;
+}
 
 .moment-shell {
   --moment-green: #233a21;
@@ -202,6 +261,98 @@ button { color: inherit; }
   outline-offset: 4px;
 }
 
+.result-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100svh;
+  padding: calc(29px + env(safe-area-inset-top)) 0 calc(18px + env(safe-area-inset-bottom));
+  background: #233a21;
+}
+
+.result-logo {
+  flex: none;
+  height: 46px;
+}
+
+.result-logo .couple-logo { width: 33px; }
+
+.result-preview {
+  display: grid;
+  width: min(calc(100% - 58px), calc((100svh - 244px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .5625));
+  aspect-ratio: 9 / 16;
+  margin-top: 31px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .92);
+  background: #1b301b;
+}
+
+.result-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.result-preview p {
+  width: 72%;
+  margin: 0;
+  color: rgba(255, 255, 255, .72);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.result-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  margin-top: 36px;
+  padding-inline: 36px;
+}
+
+.result-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, .94);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.result-action:disabled { cursor: default; opacity: .58; }
+
+.result-action-circle {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #263b24;
+}
+
+.result-action-icon { width: 27px; height: 27px; }
+
+.result-action:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 5px;
+}
+
+@media (max-width: 350px) {
+  .result-preview {
+    width: min(calc(100% - 44px), calc((100svh - 228px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .5625));
+    margin-top: 23px;
+  }
+  .result-actions { margin-top: 28px; padding-inline: 21px; }
+}
+
 @media (max-width: 350px) {
   .moment-viewport {
     width: min(calc(100% - 44px), calc((100svh - 220px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .5625));
@@ -216,6 +367,6 @@ button { color: inherit; }
 }
 
 @media (max-width: 350px) {
-  .couple-names { font-size: 36px; }
+  .couple-names { transform: scale(.92); transform-origin: top center; margin-bottom: -7px; }
   .eyebrow { font-size: 9px; }
 }

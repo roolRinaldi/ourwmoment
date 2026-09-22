@@ -5,7 +5,7 @@ import { WeddingHeader } from "@/components/WeddingHeader";
 
 export default function LandingPage() {
   return (
-    <main className="app-shell flex min-h-[100svh] flex-col items-center px-5 pb-[2svh] pt-[8.1svh] text-white">
+    <main className="app-shell flex min-h-[100svh] flex-col items-center px-5 pb-[3.7svh] pt-[8.1svh] text-white">
       <PageBackground variant="landing" />
       <WeddingHeader />
 

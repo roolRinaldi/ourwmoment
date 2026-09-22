@@ -39,6 +39,10 @@ export function SelectExperience() {
     router.replace("/camera");
   }
 
+  function selectPhoto() {
+    if (!loading && photoUrl) router.push("/result");
+  }
+
   return (
     <MomentPageShell>
       <section className="moment-stage" aria-label="Selected photo preview">
@@ -50,7 +54,7 @@ export function SelectExperience() {
 
       <div className="moment-controls select-controls">
         <RoundActionButton label="Re-Take" icon={<RetakeIcon className="moment-control-icon" />} onClick={retakePhoto} disabled={loading} />
-        <RoundActionButton label="Select" icon={<CheckIcon className="moment-control-icon" />} disabled={loading} />
+        <RoundActionButton label="Select" icon={<CheckIcon className="moment-control-icon" />} onClick={selectPhoto} disabled={loading} />
       </div>
     </MomentPageShell>
   );
