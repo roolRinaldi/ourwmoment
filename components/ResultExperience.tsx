@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CoupleLogo } from "./CoupleLogo";
 import { DownloadIcon, SendIcon, ShareIcon } from "./MomentIcons";
-import { getTemporaryPhoto } from "@/lib/photo-store";
+import { clearTemporaryPhoto, getTemporaryPhoto } from "@/lib/photo-store";
 import {
   downloadTemplate,
   renderWeddingTemplate,
@@ -35,12 +35,50 @@ function ResultAction({
   );
 }
 
+function ThankYouDialog({ onBackHome }: { onBackHome: () => void }) {
+  const backHomeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    backHomeRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  return (
+    <div className="thank-you-overlay">
+      <div className="thank-you-backdrop" aria-hidden="true" />
+      <div
+        className="thank-you-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="thank-you-title"
+      >
+        <div className="thank-you-card">
+          <img className="thank-you-wax" src="/images/wax.png" alt="" />
+          <div className="thank-you-card-inner">
+            <h2 id="thank-you-title">THANK YOU FOR YOUR<br />MOMENT &amp; MESSAGE</h2>
+            <p>Fachrul &amp; Tasya</p>
+          </div>
+        </div>
+        <button ref={backHomeRef} className="thank-you-home" type="button" onClick={onBackHome}>
+          Back To Home
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ResultExperience() {
   const router = useRouter();
   const generationRef = useRef<Promise<Blob> | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [isThankYouOpen, setThankYouOpen] = useState(false);
   const [status, setStatus] = useState("Preparing your moment...");
 
   useEffect(() => {
@@ -128,21 +166,40 @@ export function ResultExperience() {
     }
   }
 
+  function handleKirim() {
+    if (busy || !ready) return;
+    setThankYouOpen(true);
+  }
+
+  async function handleBackHome() {
+    sessionStorage.removeItem(GUEST_STORAGE_KEY);
+    generationRef.current = null;
+
+    try {
+      await clearTemporaryPhoto();
+    } finally {
+      router.replace("/");
+    }
+  }
+
   return (
     <main className="result-shell app-shell">
-      <div className="result-logo"><CoupleLogo /></div>
+      <div className={`result-content${isThankYouOpen ? " result-content-blurred" : ""}`}>
+        <div className="result-logo"><CoupleLogo /></div>
 
-      <div className="result-preview" aria-label="Final wedding moment preview">
-        {previewUrl ? <img src={previewUrl} alt="Final wedding moment artwork" /> : <p>{status}</p>}
+        <div className="result-preview" aria-label="Final wedding moment preview">
+          {previewUrl ? <img src={previewUrl} alt="Final wedding moment artwork" /> : <p>{status}</p>}
+        </div>
+
+        <div className="result-actions">
+          <ResultAction label="Download" icon={<DownloadIcon className="result-action-icon" />} onClick={handleDownload} disabled={!ready || busy} />
+          <ResultAction label="Share" icon={<ShareIcon className="result-action-icon" />} onClick={handleShare} disabled={!ready || busy} />
+          <ResultAction label="Kirim" icon={<SendIcon className="result-action-icon" />} onClick={handleKirim} disabled={!ready || busy} />
+        </div>
+
+        <p className="sr-only" aria-live="polite">{status}</p>
       </div>
-
-      <div className="result-actions">
-        <ResultAction label="Download" icon={<DownloadIcon className="result-action-icon" />} onClick={handleDownload} disabled={!ready || busy} />
-        <ResultAction label="Share" icon={<ShareIcon className="result-action-icon" />} onClick={handleShare} disabled={!ready || busy} />
-        <ResultAction label="Kirim" icon={<SendIcon className="result-action-icon" />} disabled={!ready || busy} />
-      </div>
-
-      <p className="sr-only" aria-live="polite">{status}</p>
+      {isThankYouOpen && <ThankYouDialog onBackHome={handleBackHome} />}
     </main>
   );
 }

@@ -132,7 +132,7 @@ function drawNote(
   noteContext.font = `400 31px ${interFont}`;
   noteContext.fillText("From :", 48, 92);
 
-  let nameSize = 47;
+  let nameSize = 58;
   do {
     noteContext.font = `400 ${nameSize}px ${patungFont}`;
     if (noteContext.measureText(name).width <= 490 || nameSize <= 30) break;
@@ -221,7 +221,15 @@ export async function renderWeddingTemplate(data: WeddingTemplateData): Promise<
   context.save();
   context.translate(540, 1006);
   context.rotate((1.6 * Math.PI) / 180);
+  context.shadowColor = "rgba(0, 0, 0, .5)";
+  context.shadowBlur = 11.25;
+  context.shadowOffsetX = 11.25;
+  context.shadowOffsetY = 11.25;
   context.drawImage(frame, -frameWidth / 2, -frameHeight / 2, frameWidth, frameHeight);
+  context.shadowColor = "rgba(0, 0, 0, 0)";
+  context.shadowBlur = 0;
+  context.shadowOffsetX = 0;
+  context.shadowOffsetY = 0;
   drawImageCover(context, photo, -416, -575, 832, 1120);
   context.fillStyle = "#273c25";
   context.textAlign = "center";
