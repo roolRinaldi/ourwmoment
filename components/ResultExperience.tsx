@@ -76,11 +76,14 @@ function ThankYouDialog({ onBackHome, isClosing }: { onBackHome: () => void; isC
 export function ResultExperience() {
   const router = useRouter();
   const generationRef = useRef<Promise<Blob> | null>(null);
+  const guestRef = useRef<{ name: string; wishes: string } | null>(null);
   const homeNavigationRef = useRef(false);
   const actionRef = useRef(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [isSubmitting, setSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
   const [isThankYouOpen, setThankYouOpen] = useState(false);
   const [isThankYouClosing, setThankYouClosing] = useState(false);
   const [status, setStatus] = useState("Preparing your moment...");
@@ -114,6 +117,7 @@ export function ResultExperience() {
         wishes: guest.wishes.trim(),
         photo,
       };
+      guestRef.current = { name: templateData.name, wishes: templateData.wishes };
       generationRef.current = renderWeddingTemplate(templateData);
       const result = await generationRef.current;
       if (!active) return;
@@ -174,9 +178,37 @@ export function ResultExperience() {
     }
   }
 
-  function handleKirim() {
+  async function handleKirim() {
     if (busy || !ready || actionRef.current || isThankYouOpen) return;
-    setThankYouOpen(true);
+    const guest = guestRef.current;
+    if (!guest) return;
+
+    actionRef.current = true;
+    setBusy(true);
+    setSubmitting(true);
+    setSubmissionError("");
+
+    try {
+      const finalPng = await getGeneratedTemplate();
+      const formData = new FormData();
+      formData.append("guestName", guest.name);
+      formData.append("message", guest.wishes);
+      formData.append("image", finalPng, TEMPLATE_FILENAME);
+
+      const response = await fetch("/api/moments", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Submission failed");
+      setThankYouOpen(true);
+    } catch {
+      setSubmissionError("Momen belum dapat dikirim. Silakan coba lagi.");
+    } finally {
+      actionRef.current = false;
+      setSubmitting(false);
+      setBusy(false);
+    }
   }
 
   async function handleBackHome() {
@@ -205,9 +237,10 @@ export function ResultExperience() {
         <div className="result-actions">
           <ResultAction label="Download" icon={<DownloadIcon className="result-action-icon" />} onClick={handleDownload} disabled={!ready || busy} />
           <ResultAction label="Share" icon={<ShareIcon className="result-action-icon" />} onClick={handleShare} disabled={!ready || busy} />
-          <ResultAction label="Kirim" icon={<SendIcon className="result-action-icon" />} onClick={handleKirim} disabled={!ready || busy} />
+          <ResultAction label={isSubmitting ? "Mengirim..." : "Kirim"} icon={<SendIcon className="result-action-icon" />} onClick={handleKirim} disabled={!ready || busy} />
         </div>
 
+        {submissionError && <p className="result-submit-error" role="alert">{submissionError}</p>}
         <p className="sr-only" aria-live="polite">{status}</p>
       </div>
       {isThankYouOpen && <ThankYouDialog onBackHome={handleBackHome} isClosing={isThankYouClosing} />}
