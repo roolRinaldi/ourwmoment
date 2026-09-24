@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CoupleLogo } from "./CoupleLogo";
 import { PageBackground } from "./PageBackground";
 import { WeddingHeader } from "./WeddingHeader";
+import { ROUTE_TRANSITION_MS, waitForMotion } from "@/lib/client-motion";
 
 const STORAGE_KEY = "weddingMomentGuest";
 
@@ -15,6 +16,8 @@ export function WeddingForm() {
   const [name, setName] = useState("");
   const [wishes, setWishes] = useState("");
   const [errors, setErrors] = useState<Errors>({});
+  const submittingRef = useRef(false);
+  const [isExiting, setExiting] = useState(false);
 
   useEffect(() => {
     try {
@@ -28,8 +31,9 @@ export function WeddingForm() {
     }
   }, []);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current) return;
     const nextErrors: Errors = {};
     if (!name.trim()) nextErrors.name = "Nama wajib diisi";
     if (!wishes.trim()) nextErrors.wishes = "Ucapan dan doa wajib diisi";
@@ -38,11 +42,14 @@ export function WeddingForm() {
     if (Object.keys(nextErrors).length) return;
 
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ name: name.trim(), wishes: wishes.trim() }));
+    submittingRef.current = true;
+    setExiting(true);
+    await waitForMotion(ROUTE_TRANSITION_MS);
     router.push("/camera");
   }
 
   return (
-    <main className="form-page app-shell flex min-h-[100svh] flex-col items-center px-[25px] pb-[3.7svh] pt-[8.1svh] text-white">
+    <main className={`form-page app-shell flex min-h-[100svh] flex-col items-center px-[25px] pb-[3.7svh] pt-[8.1svh] text-white${isExiting ? " motion-page-exit" : ""}`}>
       <PageBackground variant="form" />
       <WeddingHeader />
 
@@ -65,7 +72,7 @@ export function WeddingForm() {
           {errors.wishes && <p id="wishes-error" className="field-error">{errors.wishes}</p>}
         </div>
 
-        <button type="submit" className="mx-auto mt-[72px] flex h-11 min-w-[122px] items-center justify-center rounded-full bg-white px-8 text-[14px] font-normal text-neutral-800 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Submit</button>
+        <button type="submit" disabled={isExiting} className="motion-pill mx-auto mt-[72px] flex h-11 min-w-[122px] items-center justify-center rounded-full bg-white px-8 text-[14px] font-normal text-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Submit</button>
       </form>
 
       <div className="mt-auto pt-8">

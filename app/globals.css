@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+  --motion-micro: 180ms;
+  --motion-ui: 320ms;
+  --motion-page: 520ms;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -49,6 +56,7 @@ button {
   background-position: 50% 50%;
   background-repeat: no-repeat;
   transform: scale(1.002);
+  transition: filter 420ms var(--motion-ease), transform 420ms var(--motion-ease), opacity 420ms var(--motion-ease);
 }
 
 .landing-treatment,
@@ -56,10 +64,11 @@ button {
   position: absolute;
   inset: 0;
   z-index: -1;
+  transition: background-color 420ms var(--motion-ease), opacity 420ms var(--motion-ease);
 }
 
 .landing-treatment {
-  background: transparent;
+  background: rgba(10, 32, 12, 0);
 }
 
 .form-page .photo-background {
@@ -144,6 +153,7 @@ button {
   font-weight: 400;
   line-height: 1.4;
   outline: none;
+  transition: border-color var(--motion-micro) var(--motion-ease), background-color var(--motion-micro) var(--motion-ease);
 }
 
 .form-field input {
@@ -165,6 +175,7 @@ button {
 .form-field input:focus,
 .form-field textarea:focus {
   border-color: #fff;
+  background: rgba(255, 255, 255, .07);
 }
 
 .form-field [aria-invalid="true"] {
@@ -252,6 +263,7 @@ button {
   background: #1b2c1a;
   box-shadow: 0 15px 18px rgba(0, 0, 0, .38);
   cursor: pointer;
+  transition: transform var(--motion-micro) var(--motion-ease), opacity var(--motion-micro) ease;
 }
 
 .capture-button:disabled {
@@ -309,6 +321,7 @@ button {
   border-radius: 50%;
   background: #fff;
   color: var(--moment-green);
+  transition: transform var(--motion-micro) var(--motion-ease), background-color var(--motion-micro) ease;
 }
 
 .moment-control-icon {
@@ -341,6 +354,7 @@ button {
   width: 100%;
   flex-direction: column;
   align-items: center;
+  transition: filter var(--motion-ui) var(--motion-ease), opacity var(--motion-ui) var(--motion-ease);
 }
 
 .result-content-blurred {
@@ -415,6 +429,7 @@ button {
   border-radius: 50%;
   background: #fff;
   color: #263b24;
+  transition: transform var(--motion-micro) var(--motion-ease), background-color var(--motion-micro) ease;
 }
 
 .result-action-icon {
@@ -440,8 +455,6 @@ button {
   position: absolute;
   inset: 0;
   background: rgba(11, 30, 12, .3);
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
 }
 
 .thank-you-dialog {
@@ -514,6 +527,7 @@ button {
   font-weight: 400;
   line-height: 1;
   cursor: pointer;
+  transition: transform var(--motion-micro) var(--motion-ease), background-color var(--motion-micro) ease;
 }
 
 .thank-you-home:focus-visible {
@@ -537,6 +551,227 @@ button {
   .result-actions {
     margin-top: 28px;
     padding-inline: 21px;
+  }
+}
+
+/* Shared motion system */
+@keyframes motion-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes motion-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes motion-reveal {
+  from { opacity: 0; transform: scale(.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes form-background-enter {
+  from { filter: blur(0); transform: scale(1.002); }
+  to { filter: blur(7px); transform: scale(1.035); }
+}
+
+@keyframes form-treatment-enter {
+  from { background-color: rgba(10, 32, 12, 0); }
+  to { background-color: rgba(10, 32, 12, .58); }
+}
+
+@keyframes camera-flash {
+  0%, 100% { opacity: 0; }
+  35% { opacity: .42; }
+}
+
+.landing-page .photo-background {
+  animation: motion-fade-in var(--motion-page) var(--motion-ease) backwards;
+}
+
+.landing-page .wedding-header {
+  animation: motion-fade-up 480ms var(--motion-ease) 70ms backwards;
+}
+
+.landing-date {
+  animation: motion-fade-in 420ms var(--motion-ease) 150ms backwards;
+}
+
+.landing-page .motion-pill {
+  animation: motion-fade-up 440ms var(--motion-ease) 190ms backwards;
+}
+
+.landing-logo {
+  animation: motion-fade-in 420ms var(--motion-ease) 250ms backwards;
+}
+
+.landing-page-exit .wedding-header,
+.landing-page-exit .landing-bottom {
+  animation: none;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 260ms ease, transform 320ms var(--motion-ease);
+}
+
+.landing-page-exit .photo-background {
+  animation: none;
+  filter: blur(7px);
+  transform: scale(1.035);
+}
+
+.landing-page-exit .landing-treatment {
+  background-color: rgba(10, 32, 12, .58);
+}
+
+.form-page .photo-background {
+  animation: form-background-enter 480ms var(--motion-ease) backwards;
+}
+
+.form-page .form-treatment {
+  animation: form-treatment-enter 480ms var(--motion-ease) backwards;
+}
+
+.form-page .wedding-header,
+.form-page .wedding-form,
+.form-page > :last-child {
+  animation: motion-fade-up 420ms var(--motion-ease) backwards;
+}
+
+.form-page .wedding-form { animation-delay: 70ms; }
+.form-page > :last-child { animation-delay: 130ms; }
+
+.motion-page-exit > .wedding-header,
+.motion-page-exit > .wedding-form,
+.motion-page-exit > :last-child,
+.motion-page-exit > .moment-logo,
+.motion-page-exit > .moment-stage,
+.motion-page-exit > .moment-controls {
+  animation: none;
+  opacity: 0;
+  transform: translateY(-7px);
+  transition: opacity 220ms ease, transform var(--motion-ui) var(--motion-ease);
+}
+
+.motion-page-enter .moment-logo {
+  animation: motion-fade-in 360ms var(--motion-ease) backwards;
+}
+
+.motion-page-enter .moment-stage {
+  animation: motion-fade-in 420ms var(--motion-ease) 40ms backwards;
+}
+
+.motion-page-enter .moment-controls {
+  animation: motion-fade-up 390ms var(--motion-ease) 100ms backwards;
+}
+
+.camera-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.camera-flash-active {
+  animation: camera-flash 140ms ease-out both;
+}
+
+.flip-camera-icon {
+  transition: transform 300ms var(--motion-ease);
+}
+
+.flip-camera-icon-turned {
+  transform: rotate(180deg);
+}
+
+.result-page-enter .result-logo {
+  animation: motion-fade-in 360ms var(--motion-ease) backwards;
+}
+
+.result-page-enter .result-preview {
+  animation: motion-reveal 460ms var(--motion-ease) 40ms backwards;
+}
+
+.result-preview-ready img {
+  animation: motion-reveal 400ms var(--motion-ease) backwards;
+}
+
+.result-page-enter .result-action {
+  animation: motion-fade-up 380ms var(--motion-ease) backwards;
+}
+
+.result-page-enter .result-action:nth-child(1) { animation-delay: 120ms; }
+.result-page-enter .result-action:nth-child(2) { animation-delay: 180ms; }
+.result-page-enter .result-action:nth-child(3) { animation-delay: 240ms; }
+
+.thank-you-backdrop {
+  animation: motion-fade-in var(--motion-ui) ease backwards;
+}
+
+.thank-you-dialog {
+  animation: thank-you-enter var(--motion-ui) var(--motion-ease) backwards;
+}
+
+@keyframes thank-you-enter {
+  from { opacity: 0; transform: translateY(16px) scale(.97); }
+  to { opacity: 1; transform: translateY(16px) scale(1); }
+}
+
+.thank-you-overlay-closing .thank-you-backdrop {
+  animation: motion-fade-in 240ms ease reverse both;
+}
+
+.thank-you-overlay-closing .thank-you-dialog {
+  animation: thank-you-enter 240ms ease reverse both;
+  pointer-events: none;
+}
+
+.motion-pill,
+.moment-action,
+.result-action,
+.thank-you-home {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.motion-pill {
+  transition: transform var(--motion-micro) var(--motion-ease), opacity var(--motion-micro) ease;
+}
+
+.motion-pill:active:not(:disabled),
+.thank-you-home:active:not(:disabled) {
+  transform: scale(.97);
+}
+
+.capture-button:active:not(:disabled) {
+  transform: translateX(-50%) scale(.97);
+}
+
+.moment-action:active:not(:disabled) .moment-action-circle,
+.result-action:active:not(:disabled) .result-action-circle {
+  transform: scale(.96);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .motion-pill:hover:not(:disabled),
+  .thank-you-home:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .moment-action:hover:not(:disabled) .moment-action-circle,
+  .result-action:hover:not(:disabled) .result-action-circle {
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: .01ms !important;
   }
 }
 

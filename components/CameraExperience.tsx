@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CameraIcon, FlipCameraIcon, GalleryIcon } from "./MomentIcons";
 import { MomentPageShell, PhotoViewport, RoundActionButton } from "./MomentPageShell";
 import { saveTemporaryPhoto } from "@/lib/photo-store";
+import { ROUTE_TRANSITION_MS, waitForMotion } from "@/lib/client-motion";
 
 type FacingMode = "environment" | "user";
 
@@ -48,10 +49,15 @@ export function CameraExperience() {
   const streamRef = useRef<MediaStream | null>(null);
   const requestRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigatingRef = useRef(false);
+  const actionRef = useRef(false);
   const [facingMode, setFacingMode] = useState<FacingMode>("environment");
   const [cameraReady, setCameraReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("Starting camera...");
+  const [isExiting, setExiting] = useState(false);
+  const [isFlashing, setFlashing] = useState(false);
+  const [flipTurned, setFlipTurned] = useState(false);
 
   const startCamera = useCallback(async (facing: FacingMode) => {
     const requestId = ++requestRef.current;
@@ -102,8 +108,9 @@ export function CameraExperience() {
 
   async function capturePhoto() {
     const video = videoRef.current;
-    if (!video || !cameraReady || !video.videoWidth || !video.videoHeight || busy) return;
+    if (!video || !cameraReady || !video.videoWidth || !video.videoHeight || busy || actionRef.current) return;
 
+    actionRef.current = true;
     setBusy(true);
     setMessage("");
 
@@ -131,11 +138,17 @@ export function CameraExperience() {
 
       context.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
       const photo = await canvasToBlob(canvas);
-      await saveTemporaryPhoto(photo);
+      setFlashing(true);
+      await Promise.all([saveTemporaryPhoto(photo), waitForMotion(140)]);
+      setFlashing(false);
       stopStream(streamRef.current);
       streamRef.current = null;
+      navigatingRef.current = true;
+      setExiting(true);
+      await waitForMotion(ROUTE_TRANSITION_MS);
       router.push("/select");
     } catch {
+      actionRef.current = false;
       setMessage("The photo could not be captured. Please try again.");
       setBusy(false);
     }
@@ -144,8 +157,9 @@ export function CameraExperience() {
   async function choosePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || busy) return;
+    if (!file || busy || actionRef.current) return;
 
+    actionRef.current = true;
     setBusy(true);
     setMessage("");
     try {
@@ -153,20 +167,25 @@ export function CameraExperience() {
       await saveTemporaryPhoto(file);
       stopStream(streamRef.current);
       streamRef.current = null;
+      navigatingRef.current = true;
+      setExiting(true);
+      await waitForMotion(ROUTE_TRANSITION_MS);
       router.push("/select");
     } catch (error) {
+      actionRef.current = false;
       setMessage(error instanceof Error ? error.message : "The image could not be opened.");
       setBusy(false);
     }
   }
 
   function flipCamera() {
-    if (busy) return;
+    if (busy || navigatingRef.current || actionRef.current) return;
+    setFlipTurned((current) => !current);
     setFacingMode((current) => (current === "environment" ? "user" : "environment"));
   }
 
   return (
-    <MomentPageShell>
+    <MomentPageShell className={`camera-page motion-page-enter${isExiting ? " motion-page-exit" : ""}`}>
       <section className="moment-stage" aria-label="Camera">
         <PhotoViewport>
           <video
@@ -177,6 +196,7 @@ export function CameraExperience() {
             muted
           />
           {message && <p className="moment-message" role="status">{message}</p>}
+          <span className={`camera-flash${isFlashing ? " camera-flash-active" : ""}`} aria-hidden="true" />
         </PhotoViewport>
 
         <button className="capture-button" type="button" onClick={capturePhoto} disabled={!cameraReady || busy} aria-label="Capture photo">
@@ -186,7 +206,7 @@ export function CameraExperience() {
 
       <div className="moment-controls">
         <RoundActionButton label="Gallery" icon={<GalleryIcon className="moment-control-icon" />} onClick={() => fileInputRef.current?.click()} disabled={busy} />
-        <RoundActionButton label="Flip Camera" icon={<FlipCameraIcon className="moment-control-icon" />} onClick={flipCamera} disabled={busy} />
+        <RoundActionButton label="Flip Camera" icon={<FlipCameraIcon className={`moment-control-icon flip-camera-icon${flipTurned ? " flip-camera-icon-turned" : ""}`} />} onClick={flipCamera} disabled={busy} />
       </div>
 
       <input ref={fileInputRef} className="sr-only" type="file" accept="image/*" onChange={choosePhoto} tabIndex={-1} />

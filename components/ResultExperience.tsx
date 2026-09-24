@@ -11,6 +11,7 @@ import {
   TEMPLATE_FILENAME,
   type WeddingTemplateData,
 } from "@/lib/render-wedding-template";
+import { MODAL_TRANSITION_MS, waitForMotion } from "@/lib/client-motion";
 
 const GUEST_STORAGE_KEY = "weddingMomentGuest";
 
@@ -35,7 +36,7 @@ function ResultAction({
   );
 }
 
-function ThankYouDialog({ onBackHome }: { onBackHome: () => void }) {
+function ThankYouDialog({ onBackHome, isClosing }: { onBackHome: () => void; isClosing: boolean }) {
   const backHomeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -49,7 +50,7 @@ function ThankYouDialog({ onBackHome }: { onBackHome: () => void }) {
   }, []);
 
   return (
-    <div className="thank-you-overlay">
+    <div className={`thank-you-overlay${isClosing ? " thank-you-overlay-closing" : ""}`}>
       <div className="thank-you-backdrop" aria-hidden="true" />
       <div
         className="thank-you-dialog"
@@ -75,10 +76,13 @@ function ThankYouDialog({ onBackHome }: { onBackHome: () => void }) {
 export function ResultExperience() {
   const router = useRouter();
   const generationRef = useRef<Promise<Blob> | null>(null);
+  const homeNavigationRef = useRef(false);
+  const actionRef = useRef(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [isThankYouOpen, setThankYouOpen] = useState(false);
+  const [isThankYouClosing, setThankYouClosing] = useState(false);
   const [status, setStatus] = useState("Preparing your moment...");
 
   useEffect(() => {
@@ -137,17 +141,20 @@ export function ResultExperience() {
   }
 
   async function handleDownload() {
-    if (busy || !ready) return;
+    if (busy || !ready || actionRef.current) return;
+    actionRef.current = true;
     setBusy(true);
     try {
       downloadTemplate(await getGeneratedTemplate());
     } finally {
+      actionRef.current = false;
       setBusy(false);
     }
   }
 
   async function handleShare() {
-    if (busy || !ready) return;
+    if (busy || !ready || actionRef.current) return;
+    actionRef.current = true;
     setBusy(true);
     try {
       const blob = await getGeneratedTemplate();
@@ -162,32 +169,36 @@ export function ResultExperience() {
         setStatus("Sharing is unavailable. Please use Download instead.");
       }
     } finally {
+      actionRef.current = false;
       setBusy(false);
     }
   }
 
   function handleKirim() {
-    if (busy || !ready) return;
+    if (busy || !ready || actionRef.current || isThankYouOpen) return;
     setThankYouOpen(true);
   }
 
   async function handleBackHome() {
+    if (homeNavigationRef.current) return;
+    homeNavigationRef.current = true;
+    setThankYouClosing(true);
     sessionStorage.removeItem(GUEST_STORAGE_KEY);
     generationRef.current = null;
 
     try {
-      await clearTemporaryPhoto();
+      await Promise.all([clearTemporaryPhoto(), waitForMotion(MODAL_TRANSITION_MS)]);
     } finally {
       router.replace("/");
     }
   }
 
   return (
-    <main className="result-shell app-shell">
+    <main className="result-shell result-page-enter app-shell">
       <div className={`result-content${isThankYouOpen ? " result-content-blurred" : ""}`}>
         <div className="result-logo"><CoupleLogo /></div>
 
-        <div className="result-preview" aria-label="Final wedding moment preview">
+        <div className={`result-preview${previewUrl ? " result-preview-ready" : ""}`} aria-label="Final wedding moment preview">
           {previewUrl ? <img src={previewUrl} alt="Final wedding moment artwork" /> : <p>{status}</p>}
         </div>
 
@@ -199,7 +210,7 @@ export function ResultExperience() {
 
         <p className="sr-only" aria-live="polite">{status}</p>
       </div>
-      {isThankYouOpen && <ThankYouDialog onBackHome={handleBackHome} />}
+      {isThankYouOpen && <ThankYouDialog onBackHome={handleBackHome} isClosing={isThankYouClosing} />}
     </main>
   );
 }
