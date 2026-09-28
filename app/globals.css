@@ -614,6 +614,11 @@ button {
   animation: motion-fade-in 420ms var(--motion-ease) 250ms backwards;
 }
 
+.landing-footer {
+  animation: motion-fade-in 420ms var(--motion-ease) 300ms backwards;
+  white-space: nowrap;
+}
+
 .landing-page-exit .wedding-header,
 .landing-page-exit .landing-bottom {
   animation: none;
