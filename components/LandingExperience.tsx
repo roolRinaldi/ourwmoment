@@ -36,7 +36,7 @@ export function LandingExperience() {
         <div className="landing-logo mt-[6.3svh]">
           <CoupleLogo />
         </div>
-        <p className="landing-footer mt-[2.7svh] text-center text-[12px] font-normal leading-none">
+        <p className="landing-footer mt-[2.7svh] text-center text-[9px] font-normal leading-none">
           Made With <span aria-hidden="true">&hearts;</span><span className="sr-only">love</span> By Fachrul &amp; Tasya
         </p>
       </div>
